@@ -49,9 +49,9 @@ source-backed network comparison is in docs/RESEARCH.md.
 - UI prices are sats; API and storage amounts remain integer msat.
 - Wallet secrets stay local and separate from agent keys; disconnect preserves uncertain-payment recovery.
 - 187 tests and TypeScript pass, including encrypted NWC SDK transport and recovery tests.
-- Buyer runtime dependency audit and publication privacy scan pass.
+- Buyer runtime audit, privacy scan, fresh macOS install, Linux ARM64 smoke and browser checks pass.
 - Buyer download requires Python 3.12+; live NWC funds and Windows launch remain unvalidated.
-- Wallet buyer release and storefront publication are being finalized.
+- Buyer release buyer-v0.1.0-alpha.2 and offence.ai download are live with matching checksums.
 - GitHub has uploaded releases but no Actions workflows or standalone Docker image publication.
 - Public bootstrap is reachable; supplier availability still determines usable offers.
 - Node-hosted gateway/jobs remain free-only; paid split jobs and tool calls are unsupported.
