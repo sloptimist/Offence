@@ -1,0 +1,16 @@
+{
+  "name": "offence-startos",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "ncc build startos/index.ts -o javascript"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.0",
+    "@vercel/ncc": "0.38.4",
+    "typescript": "6.0.3",
+    "@start9labs/start-sdk": "2.0.9"
+  }
+}

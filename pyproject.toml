@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "offence"
+version = "0.1.0"
+description = "Permissionless inference protocol development node"
+requires-python = ">=3.12"
+license = "MIT"
+dependencies = ["fastapi>=0.115", "uvicorn>=0.30", "httpx[socks]>=0.28", "cryptography>=44"]
+
+[project.scripts]
+offence = "offence.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["offence*"]
+
+[tool.setuptools.package-data]
+offence = ["*.html", "*.js"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

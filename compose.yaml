@@ -1,0 +1,24 @@
+services:
+  offence:
+    build: .
+    user: '10001:10001'
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 512m
+    cpus: 1.0
+    tmpfs:
+      - /tmp:size=16m,mode=1777,noexec,nosuid,nodev
+    ports:
+      - '127.0.0.1:8080:8080'
+    volumes:
+      - runtime:/data
+      - ./data/config.json:/config/config.json:ro
+    command: ['python', '-m', 'offence.cli', 'serve', '--data', '/data', '--config', '/config/config.json', '--host', '0.0.0.0']
+    environment:
+      OFFENCE_BACKEND_API_KEY: '${OFFENCE_BACKEND_API_KEY:-}'
+      OFFENCE_GATEWAY_API_KEY: '${OFFENCE_GATEWAY_API_KEY:-}'
+    restart: unless-stopped
+volumes:
+  runtime:

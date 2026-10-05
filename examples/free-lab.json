@@ -1,0 +1,37 @@
+{
+  "endpoint": "http://127.0.0.1:8080",
+  "seeds": [],
+  "allowed_private_peers": [
+    "http://127.0.0.1:8080"
+  ],
+  "backend": "fixture",
+  "allow_lab_unverified": true,
+  "share_receipts": false,
+  "lightning": "disabled",
+  "offer": {
+    "manifest": {
+      "format": "offence/model/v1",
+      "name": "Protocol fixture",
+      "architecture": "protocol-fixture",
+      "quantization": "none",
+      "context_tokens": 4096,
+      "artifacts": [
+        {
+          "path": "fixture.txt",
+          "sha256": "af8cd8f4b86004ca3340036994aea94748bac03c4682fab06c35642c5fbbecf7",
+          "size": 45,
+          "role": "weights"
+        }
+      ],
+      "sources": []
+    },
+    "output_msat_per_token": 0,
+    "batch_tokens": 2,
+    "max_output_tokens": 512,
+    "generation_deadline_s": 120,
+    "payment_timeout_s": 60,
+    "proof": "unavailable",
+    "available": true,
+    "hardware": null
+  }
+}

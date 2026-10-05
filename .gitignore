@@ -1,0 +1,22 @@
+.venv/
+node_modules/
+javascript/
+.startos/
+*.key.pem
+*.s9pk
+__pycache__/
+.pytest_cache/
+*.pyc
+.env
+.env.*
+data/
+*.sqlite*
+*.pem
+*.macaroon
+.DS_Store
+
+# Local operator records and release evidence must never be published.
+.private/
+*.log
+*.bak
+*.backup
