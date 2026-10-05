@@ -1,0 +1,90 @@
+name: Docker images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - requirements.lock
+      - offence/**
+      - .github/workflows/docker.yml
+  pull_request:
+    paths:
+      - Dockerfile
+      - .dockerignore
+      - requirements.lock
+      - offence/**
+      - .github/workflows/docker.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Linux ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Build Dockerfile
+        env:
+          IMAGE: offence:${{ github.sha }}-${{ matrix.arch }}
+        run: |
+          docker build --pull --label org.opencontainers.image.source=https://github.com/smallblocks/Offence --label org.opencontainers.image.revision="$GITHUB_SHA" --tag "$IMAGE" .
+      - name: Check restricted container startup
+        env:
+          IMAGE: offence:${{ github.sha }}-${{ matrix.arch }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          test "$(docker image inspect "$IMAGE" --format '{{.Architecture}}')" = "$ARCH"
+          test "$(docker image inspect "$IMAGE" --format '{{.Config.User}}')" = '10001:10001'
+          docker run --detach --name offence-smoke --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true --pids-limit 64 --memory 512m --cpus 1 --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m "$IMAGE"
+          trap 'docker logs offence-smoke; docker rm -fv offence-smoke' EXIT
+          docker exec -i offence-smoke python - <<'PY'
+          import time
+          import urllib.request
+          for attempt in range(30):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=2) as response:
+                      assert response.status == 200
+                  print('Restricted container health check passed')
+                  break
+              except OSError:
+                  time.sleep(1)
+          else:
+              raise SystemExit('Container failed its health check')
+          PY
+      - name: Export image and checksum
+        env:
+          IMAGE: offence:${{ github.sha }}-${{ matrix.arch }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          mkdir -p dist
+          docker save "$IMAGE" | gzip > "dist/offence-linux-$ARCH.tar.gz"
+          cd dist
+          sha256sum "offence-linux-$ARCH.tar.gz" > SHA256SUMS
+          printf 'Source: https://github.com/smallblocks/Offence/commit/%s\nImage: %s\nLoad: docker load -i offence-linux-%s.tar.gz\n' "$GITHUB_SHA" "$IMAGE" "$ARCH" > BUILD.txt
+      - name: Upload Docker image
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: offence-linux-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
