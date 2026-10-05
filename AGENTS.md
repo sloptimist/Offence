@@ -56,6 +56,6 @@ source-backed network comparison is in docs/RESEARCH.md.
 - GitHub Actions builds and smoke-tests AMD64/ARM64 Docker images; run 37259879618 passes with both archives uploaded.
 - README and offence.ai explain agent-first buyer access and downloads; paid-marketplace readiness is separate.
 - Node-hosted gateway/jobs remain free-only; paid split jobs and tool calls are unsupported.
-- Live checks: both wallets disabled; Sandy has no backend/offer; Boxed offer unavailable with discovery error.
-- Both nodes have saved Strike keys; fractional-millisatoshi billing and live payment validation remain open.
-- Live supplier deployments remain revision 9; this buyer update does not sideload them.
+- Public buyer availability does not establish operational readiness of any supplier.
+- Supplier-specific configuration and diagnostics belong in the private operator handoff.
+- Buyer and documentation updates do not sideload supplier installations.
