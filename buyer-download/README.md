@@ -24,9 +24,31 @@ inference. This is a Python-based download, not a signed native installer.
 
 ## Payment wallet
 
-All spending defaults to zero. The app supports free lab inference, LND regtest,
-and explicitly enabled LND mainnet purchases. Strike receiving addresses do not
-provide spending authority. A buyer needs an LND node with usable channel balance.
+All spending defaults to zero. To connect a mainnet wallet:
+
+1. In an NWC-compatible wallet, create a dedicated Offence connection with
+   `get_info`, `pay_invoice` and `lookup_invoice` permissions. Set a wallet-side
+   allowance that includes routing fees. Offence cannot read or verify that allowance.
+2. Paste its private `nostr+walletconnect://` connection into the local app and
+   choose **Connect wallet**. This checks access without sending a payment.
+3. Choose the connected wallet, your inference limits in sats, and explicitly
+   accept seller claims and wallet-managed fees. Save to enable purchases.
+4. Give your agent only its local API key. The browser can close after setup;
+   the buyer process must remain running.
+
+NWC does not offer a standard per-payment fee cap. Offence limits inference
+charges, while the wallet controls routing fees and total wallet spending.
+Fees are additional to the displayed NWC inference allowance. The connection
+is stored privately in `~/.offence-buyer/wallet.nwc`, never returned by the API.
+Disconnect stops purchases and removes the local connection unless it is needed
+for uncertain-payment recovery. Revoke it in the wallet to invalidate all copies.
+Recovery uses lookup only and never retries a payment automatically.
+A receiving Lightning address does not grant spending authority.
+
+### Advanced: direct LND
+
+Free lab inference and LND regtest remain available. For LND mainnet, use a node
+with usable outbound channel balance.
 
 Set these environment variables locally before launching:
 
@@ -41,8 +63,9 @@ Hosted supplier-key settlement requires explicit owner opt-in. Its key recovery
 still requires that supplier; use `python -m offence.cli recover-hosted-keys` with
 this app's purchases directory and the chosen endpoint/provider for recovery.
 
-Prices and limits use integer millisatoshis: 1,000 msat is one sat. The request
-cap covers output; the daily cap includes reserved routing fees. Fee budgets must
+The UI shows sats with up to three decimal places; API amounts are integer
+millisatoshis, where 1,000 msat is one sat. For LND, the request cap covers output
+and the daily cap includes reserved routing fees. LND fee budgets must
 cover one batch per requested output token. Reservations deliberately remain
 conservative, and uncertain purchases keep their reservation. Reconciliation recovers payment
 state but does not automatically release an interrupted session reservation.

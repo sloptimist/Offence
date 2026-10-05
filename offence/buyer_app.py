@@ -33,7 +33,8 @@ class BuyerSettings(Strict):
     strategy: Literal['cheapest', 'fastest', 'preferred-model', 'balanced'] = 'cheapest'
     privacy: Literal['any', 'trusted-only'] = 'any'
     assurance: Literal['required', 'seller-claim', 'lab-unverified'] = 'required'
-    wallet: Literal['disabled', 'lnd-regtest', 'lnd-mainnet'] = 'disabled'
+    wallet: Literal['disabled', 'lnd-regtest', 'lnd-mainnet', 'nwc-mainnet'] = 'disabled'
+    wallet_managed_fees: bool = False
     allow_provider_key_release: bool = False
     max_price_msat: int = Field(default=0, ge=0, le=10**9)
     request_limit_msat: int = Field(default=0, ge=0, le=10**12)
@@ -62,8 +63,10 @@ class BuyerSettings(Strict):
             p = urlsplit(self.tor_proxy)
             if p.scheme not in ('socks5', 'socks5h') or not p.hostname or p.username or p.password or p.path or p.query or p.fragment:
                 raise ValueError('Expected SOCKS origin without credentials')
-        if self.wallet == 'lnd-mainnet' and self.assurance != 'seller-claim':
+        if self.wallet in ('lnd-mainnet', 'nwc-mainnet') and self.assurance != 'seller-claim':
             raise ValueError('Mainnet requires explicit seller-claim acceptance')
+        if self.wallet == 'nwc-mainnet' and (not self.wallet_managed_fees or self.fee_per_batch_msat or self.total_fee_limit_msat):
+            raise ValueError('NWC requires explicit wallet-managed fees with no local fee-cap claim')
         if self.wallet == 'lnd-regtest' and self.assurance != 'lab-unverified':
             raise ValueError('Regtest requires explicit lab acceptance')
         if self.wallet == 'disabled' and any((self.max_price_msat, self.request_limit_msat, self.daily_limit_msat,
@@ -79,7 +82,7 @@ class BuyerSettings(Strict):
 
     @property
     def network(self):
-        return 'offence-v1' if self.wallet == 'lnd-mainnet' else 'offence-lab-v1'
+        return 'offence-v1' if self.wallet in ('lnd-mainnet', 'nwc-mainnet') else 'offence-lab-v1'
 
     def node_config(self):
         policies = [RoutingPolicy(alias='auto', model_ids=self.model_ids, providers=self.providers,
@@ -99,6 +102,12 @@ def private_write(path, text):
             f.flush()
             os.fsync(f.fileno())
         os.replace(temp, path)
+        if os.name != 'nt':
+            fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
     finally:
         temp.unlink(missing_ok=True)
 
@@ -126,17 +135,29 @@ def create_buyer_app(directory, port=8787, background=True, transport=None, wall
         store.db.execute('INSERT OR IGNORE INTO buyer_totals VALUES (1,0,0)')
     origins = {f'http://127.0.0.1:{port}', f'http://localhost:{port}'}
 
-    def make_wallet(mode):
+    def make_wallet(mode, connection=None):
         if mode == 'disabled':
             return None
         if wallet_factory:
             return wallet_factory(mode)
+        if mode == 'nwc-mainnet':
+            from .nwc import NwcWallet
+            return NwcWallet(connection if connection is not None else (directory / 'wallet.nwc').read_text())
         from .lightning import LndMainnet, LndRegtest
         return (LndMainnet if mode == 'lnd-mainnet' else LndRegtest).from_env()
 
     state = {'settings': settings, 'wallet': None, 'wallet_ready': settings.wallet == 'disabled',
              'discovery_error': None, 'active': set(), 'refresh_lock': asyncio.Lock(),
-             'client': Buyer(identity, directory / 'purchases')}
+             'client': Buyer(identity, directory / 'purchases'), 'changing': False}
+
+    async def close_wallet(wallet):
+        if wallet and hasattr(wallet, 'close'):
+            with suppress(Exception):
+                await wallet.close()
+
+    def unresolved():
+        return any(not p.with_name(p.name.removesuffix('.attempt.json')+'.payment.json').exists()
+                   for p in (directory / 'purchases').glob('*.attempt.json'))
 
     async def refresh():
         async with state['refresh_lock']:
@@ -165,6 +186,7 @@ def create_buyer_app(directory, port=8787, background=True, transport=None, wall
             state['client'] = Buyer(identity, directory / 'purchases', wallet)
         except Exception:
             state['wallet_ready'] = False
+            await close_wallet(locals().get('wallet'))
         task = asyncio.create_task(worker()) if background else None
         try:
             yield
@@ -174,6 +196,7 @@ def create_buyer_app(directory, port=8787, background=True, transport=None, wall
                 with suppress(asyncio.CancelledError):
                     await task
             store.close()
+            await close_wallet(state['wallet'])
 
     app = FastAPI(lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
     app.add_middleware(ResourceLimits, max_active=16)
@@ -219,6 +242,7 @@ def create_buyer_app(directory, port=8787, background=True, transport=None, wall
         totals = store.db.execute('SELECT tokens,msat FROM buyer_totals WHERE id=1').fetchone()
         return {'settings': state['settings'].model_dump(), 'agent_key': agent_key,
                 'base_url': f'http://127.0.0.1:{port}/v1', 'wallet_ready': state['wallet_ready'],
+                'nwc_saved': (directory / 'wallet.nwc').exists(),
                 'active': len(state['active']), 'known_peers': store.peer_count(identity.public),
                 'discovery_error': state['discovery_error'],
                 'received_tokens': totals[0], 'received_output_msat': totals[1],
@@ -227,23 +251,90 @@ def create_buyer_app(directory, port=8787, background=True, transport=None, wall
     @app.put('/admin/settings')
     async def update_settings(request: Request):
         auth(request, True)
-        if state['active']:
+        if state['active'] or state['changing']:
             raise HTTPException(409, 'Wait for active purchases before changing policy')
         new = BuyerSettings.model_validate(await bounded_body(request))
+        if state['active'] or state['changing']:
+            raise HTTPException(409, 'Buyer is busy')
+        state['changing'] = True
+        wallet = None
         try:
             wallet = make_wallet(new.wallet)
             if wallet:
+                for path in (directory / 'purchases').glob('*.attempt.json'):
+                    if path.with_name(path.name.removesuffix('.attempt.json')+'.payment.json').exists():
+                        continue
+                    attempt = json.loads(path.read_text())
+                    if (attempt.get('network', 'regtest') != wallet.network
+                            or attempt.get('wallet_identity') != getattr(wallet, 'identity', None)):
+                        raise ValueError('Pending payments belong to another wallet')
                 async with asyncio.timeout(45):
                     await wallet.check_network()
                     await Buyer(identity, directory / 'purchases', wallet).reconcile_payments()
+            old = state['wallet']
+            private_write(settings_path, new.model_dump_json(indent=2))
+            state['settings'], state['wallet'], state['wallet_ready'] = new, wallet, True
+            state['client'] = Buyer(identity, directory / 'purchases', wallet)
+            await close_wallet(old)
         except Exception:
-            raise HTTPException(412, 'Wallet unavailable or wrong network; saved settings unchanged')
-        if state['active']:
-            raise HTTPException(409, 'A purchase started; settings unchanged')
-        private_write(settings_path, new.model_dump_json(indent=2))
-        state['settings'], state['wallet'], state['wallet_ready'] = new, wallet, True
-        state['client'] = Buyer(identity, directory / 'purchases', wallet)
+            if wallet is not state['wallet']:
+                await close_wallet(wallet)
+            raise HTTPException(412, 'Wallet unavailable, pending payments belong to another wallet, or settings could not be saved') from None
+        finally:
+            state['changing'] = False
         return {'saved': True}
+
+    @app.post('/admin/wallet/connect')
+    async def connect_wallet(request: Request):
+        auth(request, True)
+        body = await bounded_body(request)
+        if not isinstance(body, dict) or set(body) != {'connection'}:
+            raise HTTPException(400, 'Supply a wallet connection')
+        from .nwc import validate_connection
+        connection = validate_connection(body['connection'])
+        if state['active'] or state['changing']:
+            raise HTTPException(409, 'Wait for active purchases before connecting a wallet')
+        path = directory / 'wallet.nwc'
+        if unresolved() and (not path.exists() or path.read_text() != connection):
+            raise HTTPException(409, 'Recover pending payments before replacing this wallet')
+        if state['settings'].wallet != 'disabled':
+            raise HTTPException(409, 'Pause payments before replacing the wallet')
+        state['changing'] = True
+        wallet = None
+        try:
+            wallet = make_wallet('nwc-mainnet', connection)
+            async with asyncio.timeout(45):
+                await wallet.check_network()
+                await Buyer(identity, directory / 'purchases', wallet).reconcile_payments()
+            private_write(path, connection)
+        except Exception:
+            raise HTTPException(412, 'Connection failed. Check mainnet, get_info, pay_invoice and lookup_invoice permissions') from None
+        finally:
+            await close_wallet(wallet)
+            state['changing'] = False
+        return {'connected': True, 'spending_enabled': False}
+
+    @app.post('/admin/wallet/disconnect')
+    async def disconnect_wallet(request: Request):
+        auth(request, True)
+        if state['active'] or state['changing']:
+            raise HTTPException(409, 'Wait for active purchases before disconnecting')
+        state['changing'] = True
+        try:
+            new = BuyerSettings.model_validate({**state['settings'].model_dump(), 'wallet': 'disabled',
+                'wallet_managed_fees': False, 'max_price_msat': 0, 'request_limit_msat': 0,
+                'daily_limit_msat': 0, 'fee_per_batch_msat': 0, 'total_fee_limit_msat': 0})
+            private_write(settings_path, new.model_dump_json(indent=2))
+            old = state['wallet']
+            state['settings'], state['wallet'], state['wallet_ready'] = new, None, True
+            state['client'] = Buyer(identity, directory / 'purchases')
+            retained = unresolved()
+            if not retained:
+                (directory / 'wallet.nwc').unlink(missing_ok=True)
+            await close_wallet(old)
+        finally:
+            state['changing'] = False
+        return {'disconnected': True, 'credential_retained_for_recovery': retained}
 
     @app.post('/admin/refresh')
     async def refresh_now(request: Request):
@@ -292,6 +383,8 @@ def create_buyer_app(directory, port=8787, background=True, transport=None, wall
     async def chat(request: Request):
         auth(request)
         req = ChatRequest.model_validate(await bounded_body(request))
+        if state['changing']:
+            raise HTTPException(409, 'Owner is changing the wallet or policy')
         s = state['settings']  # Immutable policy reference for this request.
         if req.model != 'auto' or not s.model_ids:
             raise HTTPException(404, 'Choose models in the buyer app, then use model auto')

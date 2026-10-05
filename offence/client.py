@@ -52,6 +52,8 @@ class Buyer:
             attempt = json.loads(path.read_text())
             if attempt.get("network", "regtest") != getattr(self.wallet, "network", "regtest"):
                 continue
+            if attempt.get('wallet_identity') != getattr(self.wallet, 'identity', None):
+                continue
             batch = json.loads((self.directory / (name + ".batch.json")).read_text())
             body = verify(batch, attempt["provider"])
             sealed = body["sealed"]
@@ -247,6 +249,7 @@ class Buyer:
                                 "commitment": digest(sealed), "fee_limit_msat": fee_limit_msat,
                                 "invoice": body["invoice"], "batch_hash": digest(message),
                                 "provider": provider, "session": session, "sequence": seq,
+                                "wallet_identity": getattr(self.wallet, 'identity', None),
                                 "network": getattr(self.wallet, "network", "regtest")})
                             preimage = await self.wallet.pay(body["invoice"], payment_hash, amount,
                                                             digest(sealed), fee_limit_msat)

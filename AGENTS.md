@@ -18,7 +18,9 @@ source-backed network comparison is in docs/RESEARCH.md.
 - Routing never relaxes model/trust policy; retry allowances cannot consume initial-task reservations.
 - Supplier protection takes priority: bound admitted work, runtime privileges and backend access.
 - The node-hosted gateway is text-only and free-lab-only. The standalone buyer app
-  supports budgeted LND payments; neither passes through unsupported parameters.
+  supports budgeted LND and NWC payments; neither passes through unsupported parameters.
+- NWC inference limits exclude routing fees; the owner must accept wallet-managed fees and set a wallet allowance.
+- NWC connection secrets are owner-only local files; preserve uncertain-payment recovery and never resend on timeout.
 - Buyer owner and agent keys are separate. Agent requests cannot alter owner policy.
 - Buyer launch binds to loopback and locks its data directory. Do not expose it publicly.
 - StartOS initializes /data/runtime before running as UID 10001; preserve identity on upgrades.
@@ -42,15 +44,16 @@ source-backed network comparison is in docs/RESEARCH.md.
 ## Current state
 
 - Supplier package revision 0.1.0:10 remains the experimental public StartOS release.
-- Standalone buyer app adds loopback UI/API, signed discovery and policy-bound LND purchases.
-- Separate owner/agent keys protect policy; budgets start at zero and proofs default to required.
-- Buyer token totals persist; daily spending and token reservations are conservative.
-- 176 tests and TypeScript pass; real regtest covers buyer discovery, paid chat/SSE and limits.
-- Download uses pinned Python runtime dependencies and requires Python 3.12 or newer.
-- macOS fresh-install and UI checks pass; Windows launch is not validated.
-- Buyer release buyer-v0.1.0-alpha.1 and offence.ai download are public; checksums match.
-- Public bootstrap is reachable but currently advertises no model offers.
-- Private release and hosting evidence stays in .startos/ and .private/.
-- Node-hosted gateway/jobs remain free-only; buyer app paid split jobs and tool calls are unsupported.
+- Buyer supports loopback UI/API, signed discovery, LND and NWC mainnet wallet connection.
+- NWC connects without spending; owner enables budgets and explicitly accepts wallet-managed fees.
+- UI prices are sats; API and storage amounts remain integer msat.
+- Wallet secrets stay local and separate from agent keys; disconnect preserves uncertain-payment recovery.
+- 187 tests and TypeScript pass, including encrypted NWC SDK transport and recovery tests.
+- Buyer runtime dependency audit and publication privacy scan pass.
+- Buyer download requires Python 3.12+; live NWC funds and Windows launch remain unvalidated.
+- Wallet buyer release and storefront publication are being finalized.
+- GitHub has uploaded releases but no Actions workflows or standalone Docker image publication.
+- Public bootstrap is reachable; supplier availability still determines usable offers.
+- Node-hosted gateway/jobs remain free-only; paid split jobs and tool calls are unsupported.
 - Live mainnet purchases, fractional pricing and stronger StartOS isolation remain open.
-- Live supplier deployments remain revision 9; this buyer release does not sideload them.
+- Live supplier deployments remain revision 9; this buyer update does not sideload them.
