@@ -51,6 +51,9 @@ rejected. A lab experiment does not prove which model the GPU server executes.
 
 ## Docker and StartOS
 
+See [GitHub Docker build downloads](docs/DOCKER-BUILDS.md) for architecture-specific
+image archives, checksum verification and installation. To build locally:
+
 ```sh
 docker build -t offence:lab .
 docker run --rm --name offence-lab \

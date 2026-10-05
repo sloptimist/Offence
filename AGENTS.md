@@ -29,6 +29,7 @@ source-backed network comparison is in docs/RESEARCH.md.
 - No em dashes. Secrets belong in ignored runtime files, never source or logs.
 - The operator explicitly approves GitHub commit, push and releases for Offence
   under smallblocks, as a project exception to the workspace Gitea-only rule.
+- Docker Actions artifacts are downloadable image archives retained 30 days, not GHCR images or s9pk releases.
 - Keep operational records in ignored .private/ and .startos/, never in public source.
 - Do not deploy without a concrete review.
 - Bump the package revision before every s9pk pack; use release preflight.
@@ -52,7 +53,7 @@ source-backed network comparison is in docs/RESEARCH.md.
 - Buyer runtime audit, privacy scan, fresh macOS install, Linux ARM64 smoke and browser checks pass.
 - Buyer download requires Python 3.12+; live NWC funds and Windows launch remain unvalidated.
 - Buyer release buyer-v0.1.0-alpha.2 and offence.ai download are live with matching checksums.
-- GitHub has uploaded releases but no Actions workflows or standalone Docker image publication.
+- GitHub Actions builds and smoke-tests AMD64/ARM64 Docker images; run 37259879618 passes with both archives uploaded.
 - Public bootstrap is reachable; supplier availability still determines usable offers.
 - Node-hosted gateway/jobs remain free-only; paid split jobs and tool calls are unsupported.
 - Live mainnet purchases, fractional pricing and stronger StartOS isolation remain open.
