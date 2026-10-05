@@ -45,6 +45,6 @@ source-backed network comparison is in docs/RESEARCH.md.
 - Paid direct CLI is separate from the free-only agent gateway and jobs.
 - Fractional pricing, live hosted settlement and StartOS isolation acceptance remain open.
 - Last verified live deployments use revision 9; revision 10 is not sideloaded.
-- Source publication targets smallblocks/Offence; preserve the existing LICENSE commit.
+- Reviewed source is public at smallblocks/Offence, preserving the original LICENSE commit.
 - Next product phase: offence.ai buyer download, local agent API, enforced buyer preferences.
 - Private deployment and release evidence remain in ignored .private/ and .startos/.
