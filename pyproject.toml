@@ -12,12 +12,13 @@ dependencies = ["fastapi>=0.115", "uvicorn>=0.30", "httpx[socks]>=0.28", "crypto
 
 [project.scripts]
 offence = "offence.cli:main"
+offence-buyer = "offence.buyer_launcher:main"
 
 [tool.setuptools.packages.find]
 include = ["offence*"]
 
 [tool.setuptools.package-data]
-offence = ["*.html", "*.js"]
+offence = ["*.html", "*.js", "*.css"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

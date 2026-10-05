@@ -22,3 +22,19 @@ modules are absent from the inspected JavaScript bundle. Both architecture appli
 and package metadata passes the privacy check. A retained image passes the
 restricted Docker smoke test. No mainnet payment test is
 claimed.
+
+## Buyer download
+
+The buyer build passes 176 tests and TypeScript checks. Real Bitcoin/LND regtest
+exercises graph discovery, buyer chat and SSE purchases, persistent token totals
+and daily spending refusal. Simulated mainnet-mode tests cover price pinning and
+daily limits without using real funds. Tests also reject agent policy changes,
+foreign browser origins, unapproved models, unsupported tools, and unsafe wallet
+configuration. Interrupted SSE does not emit a success marker.
+
+The extracted download installs its pinned runtime in a fresh macOS virtual
+environment and serves the local UI over TCP. A second launcher cannot reuse its
+data directory. The extracted application also serves authenticated setup in a
+non-root, read-only Linux container. Browser verification covers rendering and
+policy save. Windows launch is untested. No live GPU inference or mainnet spending
+is claimed for this buyer release.

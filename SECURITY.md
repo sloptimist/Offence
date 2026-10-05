@@ -54,3 +54,19 @@ permissions, separate buyer spending credentials, explicit spending limits, and
 backups of identity plus settlement state. Never enable a real-money offer while
 its backend or recovery path is unverified. Update dependency advisory checks for
 every release; a clean scan cannot rule out unknown vulnerabilities.
+
+## Standalone buyer app
+
+The separate downloadable buyer app uses a loopback-only API with owner/agent
+key separation, Host/Origin checks, explicit supplier/model policy and durable
+spending limits. It supports LND regtest and opt-in mainnet payment code; mainnet
+purchases have not been validated with live funds. The node-hosted gateway and
+split-job API remain free-only. No endpoint grants model output tool execution.
+An agent with filesystem or shell access under the owner's account is outside
+this API boundary. Do not describe the app as an operating-system sandbox.
+
+A fresh buyer discovers the public seed without sending inference prompts.
+Availability still depends on suppliers advertising usable model offers. The
+download has been installed on macOS and exercised on Linux; Windows launchers
+are included but have not been validated. Runtime dependency audit reports no
+known findings. Source and archive privacy checks must be repeated on releases.

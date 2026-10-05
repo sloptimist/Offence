@@ -12,7 +12,7 @@ class Router:
         self.policies = {p.alias: p for p in config.gateway.policies}
         self.loads = {}
 
-    def select(self, alias, max_tokens, excluded=(), trusted_only=False):
+    def select(self, alias, max_tokens, excluded=(), trusted_only=False, max_price_msat=0, network=None, max_latency_ms=None):
         if alias in self.routes:
             r = self.routes[alias]
             if trusted_only:
@@ -29,7 +29,8 @@ class Router:
                 ad = Advertisement.model_validate(verify(envelope))
                 provider, offer = envelope['signer'], ad.offer
                 if (ad.expires <= time.time() or ad.issued > time.time() + 30 or not offer
-                    or not offer.available or not offer.text_chat or offer.output_msat_per_token != 0
+                    or not offer.available or not offer.text_chat or offer.output_msat_per_token > max_price_msat
+                    or (network is not None and ad.network != network)
                     or provider in excluded or (p.providers and provider not in p.providers)
                     or ((trusted_only or p.privacy == 'trusted-only') and provider not in p.trusted_providers)
                     or max_tokens > offer.max_output_tokens or offer.manifest.context_tokens < p.min_context_tokens
@@ -43,6 +44,8 @@ class Router:
                 if stats and stats['cooldown_until'] > time.time():
                     continue
                 latency = stats['latency_ms'] if stats and stats['latency_ms'] is not None else 3600000
+                if max_latency_ms is not None and (not stats or stats['latency_ms'] is None or latency > max_latency_ms):
+                    continue
                 failures = stats['failures'] if stats else 0
                 preference = p.model_ids.index(offer.manifest.model_id)
                 load = self.loads.get(provider, 0)

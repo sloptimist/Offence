@@ -1,5 +1,13 @@
 # Offence
 
+## Buyer app
+
+Download the buyer app from [offence.ai](https://offence.ai), or run
+`python -m offence.buyer_launcher` in the installed Python environment.
+No GPU is needed. See [buyer setup](buyer-download/README.md) for installation,
+agent connection, wallet configuration and security boundaries.
+
+
 A permissionless inference service for StartOS and Linux Docker. Providers advertise
 exact model identities and seller-defined prices. Buyers select a provider and
 receive streamed output through a signed delivery protocol.

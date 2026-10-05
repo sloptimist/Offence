@@ -17,7 +17,10 @@ source-backed network comparison is in docs/RESEARCH.md.
 - Keep task planning and result combination in the harness. Offence routes independent waves.
 - Routing never relaxes model/trust policy; retry allowances cannot consume initial-task reservations.
 - Supplier protection takes priority: bound admitted work, runtime privileges and backend access.
-- Agent API is text-only and free-lab-only; never silently pass through unsupported parameters.
+- The node-hosted gateway is text-only and free-lab-only. The standalone buyer app
+  supports budgeted LND payments; neither passes through unsupported parameters.
+- Buyer owner and agent keys are separate. Agent requests cannot alter owner policy.
+- Buyer launch binds to loopback and locks its data directory. Do not expose it publicly.
 - StartOS initializes /data/runtime before running as UID 10001; preserve identity on upgrades.
 - StartOS reports the requested readonly config mount as rw; root-owned permissions protect it.
 - Live StartOS has NoNewPrivs=0; do not claim Docker hardening flags apply to LXC.
@@ -37,14 +40,14 @@ source-backed network comparison is in docs/RESEARCH.md.
 
 ## Current state
 
-- Experimental revision 0.1.0:10 is built for both architectures after the initial security review.
-- 160 tests, TypeScript, discovery, free gateway/jobs and LND regtest recovery pass.
-- Both packaged application payloads match reviewed source; restricted Docker smoke passes.
-- Two SDK development-tooling advisories remain; affected modules are absent from the bundle.
-- Public discovery and signed streaming work; execution proofs remain unavailable.
-- Paid direct CLI is separate from the free-only agent gateway and jobs.
-- Fractional pricing, live hosted settlement and StartOS isolation acceptance remain open.
-- Last verified live deployments use revision 9; revision 10 is not sideloaded.
-- Reviewed source is public at smallblocks/Offence, preserving the original LICENSE commit.
-- Next product phase: offence.ai buyer download, local agent API, enforced buyer preferences.
-- Private deployment and release evidence remain in ignored .private/ and .startos/.
+- Supplier package revision 0.1.0:10 remains the experimental public StartOS release.
+- Standalone buyer app adds loopback UI/API, signed discovery and policy-bound LND purchases.
+- Separate owner/agent keys protect policy; budgets start at zero and proofs default to required.
+- Buyer token totals persist; daily spending and token reservations are conservative.
+- 176 tests and TypeScript pass; real regtest covers buyer discovery, paid chat/SSE and limits.
+- Download uses pinned Python runtime dependencies and requires Python 3.12 or newer.
+- macOS fresh-install and UI checks pass; Windows launch is not validated.
+- Storefront download publication is in progress. Private evidence stays in .startos/.
+- Node-hosted gateway/jobs remain free-only; buyer app paid split jobs and tool calls are unsupported.
+- Live mainnet purchases, fractional pricing and stronger StartOS isolation remain open.
+- Live supplier deployments remain revision 9; this buyer release does not sideload them.

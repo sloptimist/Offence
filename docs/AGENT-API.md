@@ -1,5 +1,9 @@
 # Agent connection contract
 
+For the standalone downloadable buyer app, see [buyer setup](../buyer-download/README.md).
+Its loopback API supports explicitly budgeted LND purchases. The contract below
+describes the separate node-hosted gateway, which remains free-only.
+
 Run a buyer-only Offence service on your PC, or use your own StartOS service. It
 requires no GPU. Configure pinned routes with the StartOS Configure Buyer API
 action, or the `gateway` object in the operator's configuration. Set

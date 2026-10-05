@@ -100,6 +100,42 @@ async def exercise(a, b):
             assert app.state.store.evidence()['settled_batches']==3
             print('PASS: Offence TCP stream paid and decrypted three real regtest batches',flush=True)
             import httpx
+            # Exercise the downloadable buyer API with real Lightning settlement.
+            from offence.backend import Fixture
+            from offence.buyer_app import BuyerSettings, create_buyer_app, private_write
+            class ChatFixture(Fixture):
+                def stream_chat(self, messages, max_tokens):
+                    return self.stream('', max_tokens)
+            app.state.provider.backend = ChatFixture()
+            config.endpoint = endpoint
+            config.allowed_private_peers = [endpoint]
+            config.backend = 'vllm'  # Advertise the fixture's tested text-chat contract.
+            local = Path(td)/'local-app'
+            local.mkdir()
+            prefs = BuyerSettings(seeds=[endpoint], approved_origins=[endpoint], model_ids=[manifest.model_id],
+                wallet='lnd-regtest', assurance='lab-unverified', max_price_msat=5000,
+                request_limit_msat=40000, daily_limit_msat=80000, max_output_tokens=8)
+            private_write(local/'buyer-settings.json', prefs.model_dump_json())
+            buyer_app = create_buyer_app(local, background=False, wallet_factory=lambda mode: a)
+            async with buyer_app.router.lifespan_context(buyer_app):
+                owner = (local/'owner.key').read_text()
+                agent = (local/'agent.key').read_text()
+                async with httpx.AsyncClient(transport=httpx.ASGITransport(app=buyer_app), base_url='http://127.0.0.1:8787',
+                    headers={'Authorization':'Bearer '+agent}) as ui:
+                    r = await ui.post('/admin/refresh', headers={'Authorization':'Bearer '+owner}, json={})
+                    assert r.status_code == 200 and r.json()['known_peers'] == 1, r.text
+                    payload = {'model':'auto','messages':[{'role':'user','content':'hello'}],'max_tokens':8}
+                    r = await ui.post('/v1/chat/completions', json=payload)
+                    assert r.status_code == 200, r.text
+                    assert r.json()['offence']['spent_msat'] == 25000
+                    r = await ui.post('/v1/chat/completions', json={**payload,'stream':True})
+                    assert r.status_code == 200 and r.text.endswith('data: [DONE]\n\n'), r.text
+                    r = await ui.post('/v1/chat/completions', json=payload)
+                    assert r.status_code == 429, r.text
+                    totals = (await ui.get('/admin/state',headers={'Authorization':'Bearer '+owner})).json()
+                    assert totals['received_tokens'] == 10 and totals['received_output_msat'] == 50000
+                    assert not totals['active']
+            print('PASS: buyer app discovery, paid chat/SSE, token totals and durable daily limit with real regtest funds',flush=True)
             class LostReply:
                 network = 'regtest'
                 async def pay(self, *args):

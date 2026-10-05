@@ -111,16 +111,16 @@
 
 ## Buyer storefront and downloadable app
 
-- Make offence.ai the public storefront with a “Buy Inference Here” entry point.
-- Provide a downloadable buyer app that joins the provider graph without GPUs
-  or running a supplier service. The app exposes a local agent-compatible API.
+- Keep the offence.ai buyer download and checksum aligned with reviewed releases.
+- Add signed native installers to remove the Python prerequisite from the buyer
+  download. Validate the Windows launcher before claiming Windows support.
 - Let the buyer set allowed models, maximum prices and spending limits, latency
   preferences and trusted-provider/privacy restrictions. The agent selects only
   suppliers permitted by those rules and connects directly to them.
 - Keep discovery replaceable and multi-seed. The storefront is not a mandatory
   broker, directory, custodian or inference relay.
-- Complete the supplier security sweep and release work first. Carry supplier
-  quotas, payment verification and bounded work into the later paid buyer flow.
+- Preserve supplier quotas and bounded work while adding negotiated tool support
+  and paid independent-job routing to the standalone buyer app.
 - Show and require explicit approval of a spending policy before the agent can
   purchase inference. Keep supplier advertisements separate from verified results.
 - Keep wallet secrets and spending enforcement in the local buyer service. A remote

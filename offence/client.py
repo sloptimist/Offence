@@ -32,11 +32,12 @@ class Buyer:
             handle.flush()
             os.fsync(handle.fileno())
         os.replace(temporary, destination)
-        directory_fd = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY)
-        try:
-            os.fsync(directory_fd)
-        finally:
-            os.close(directory_fd)
+        if os.name != "nt":
+            directory_fd = os.open(self.directory, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
         self.record_bytes += len(encoded) - old_size
 
     async def reconcile_payments(self):
@@ -168,6 +169,8 @@ class Buyer:
                     or q.get("assurance", "lab-unverified") != assurance
                     or q.get("payment_network") != (getattr(self.wallet, "network", "regtest") if q["max_total_msat"] else "free-lab")):
                 raise ValueError("Provider quote violates buyer request")
+            if q["max_total_msat"] and not self.wallet:
+                raise ValueError("Paid quote requires a configured buyer wallet before acceptance")
             mode = q.get('settlement_mode', 'preimage-v1')
             if mode not in {'preimage-v1','provider-key-v1'} or (mode == 'provider-key-v1' and not allow_provider_key_release):
                 raise ValueError('Unaccepted settlement mode')
@@ -276,7 +279,7 @@ class Buyer:
                         seq += 1
                         previous = digest(message)
                         text = "".join(g["text"] for g in groups)
-                        yield {"type": "delta", "text": text, "token_count": count, "session": session} if detailed else text
+                        yield {"type": "delta", "text": text, "token_count": count, "session": session, "amount_msat": amount} if detailed else text
                 if buffer.strip() or not ended:
                     raise ValueError("Stream interrupted without a signed completion record")
 

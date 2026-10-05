@@ -45,3 +45,11 @@ Only after the new route works should you update the node's advertised address,
 its peers' seed addresses and approved origins. Retire any old public host binding.
 Changing a hostname does not erase historical DNS, certificates or retained peer
 records; preserving node identity keeps old and new signed records linkable.
+
+## Buyer download
+
+Run `python scripts/build_buyer.py` to create `.startos/offence-buyer.zip`. After
+release review, copy that archive into `downloads/offence-buyer.zip` under the
+public document root, alongside a `downloads/SHA256SUMS` file containing its
+SHA-256. Update `index.html` after both files are available. These generated files
+are excluded from source control. Never copy the buyer runtime data directory.
