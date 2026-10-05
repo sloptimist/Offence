@@ -25,7 +25,8 @@ source-backed network comparison is in docs/RESEARCH.md.
 - StartOS reports the requested readonly config mount as rw; root-owned permissions protect it.
 - Live StartOS has NoNewPrivs=0; do not claim Docker hardening flags apply to LXC.
 - No em dashes. Secrets belong in ignored runtime files, never source or logs.
-- The operator authorizes a public GitHub release under smallblocks after the security sweep.
+- The operator explicitly approves GitHub commit, push and releases for Offence
+  under smallblocks, as a project exception to the workspace Gitea-only rule.
 - Keep operational records in ignored .private/ and .startos/, never in public source.
 - Do not deploy without a concrete review.
 - Bump the package revision before every s9pk pack; use release preflight.
@@ -47,7 +48,9 @@ source-backed network comparison is in docs/RESEARCH.md.
 - 176 tests and TypeScript pass; real regtest covers buyer discovery, paid chat/SSE and limits.
 - Download uses pinned Python runtime dependencies and requires Python 3.12 or newer.
 - macOS fresh-install and UI checks pass; Windows launch is not validated.
-- Storefront download publication is in progress. Private evidence stays in .startos/.
+- Buyer release buyer-v0.1.0-alpha.1 and offence.ai download are public; checksums match.
+- Public bootstrap is reachable but currently advertises no model offers.
+- Private release and hosting evidence stays in .startos/ and .private/.
 - Node-hosted gateway/jobs remain free-only; buyer app paid split jobs and tool calls are unsupported.
 - Live mainnet purchases, fractional pricing and stronger StartOS isolation remain open.
 - Live supplier deployments remain revision 9; this buyer release does not sideload them.
