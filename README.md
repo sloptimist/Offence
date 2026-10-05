@@ -1,21 +1,30 @@
 # Offence
 
-## Buyer app
+Offence is an agent-first, permissionless inference marketplace for independent
+suppliers and buyers. Providers advertise models and set prices. Buyers set the
+rules, and their local Offence app routes agent requests to eligible suppliers.
 
-Download the buyer app from [offence.ai](https://offence.ai), or run
-`python -m offence.buyer_launcher` in the installed Python environment.
-No GPU is needed. See [buyer setup](buyer-download/README.md) for installation,
-agent connection, wallet configuration and security boundaries.
+## Agent-first buyer access
 
+[Download the buyer app](https://offence.ai/downloads/offence-buyer.zip) from
+[offence.ai](https://offence.ai). No GPU or supplier node is required.
 
-A permissionless inference service for StartOS and Linux Docker. Providers advertise
-exact model identities and seller-defined prices. Buyers select a provider and
-receive streamed output through a signed delivery protocol.
+1. Launch the app locally and connect an NWC-compatible Lightning wallet or LND.
+2. Select allowed models, supplier preferences, privacy restrictions and spending
+   limits. The wallet controls its NWC allowance and routing fees.
+3. Give your agent the displayed local API address and agent key, with model
+   `auto`. Offence selects eligible suppliers within your saved policy.
+
+The owner retains control of wallet credentials and budgets. Agents use an
+OpenAI-compatible text-chat subset with streaming; they cannot change owner
+policy. This is not a promise of compatibility with every agent harness.
+Available inference depends on eligible supplier offers. See [buyer setup](buyer-download/README.md)
+for wallet configuration and boundaries, and [agent connection details](docs/AGENT-API.md).
+Implementation and deployment status live in [AGENTS.md](AGENTS.md).
 
 Read [the specification](SPEC.md) for protocol rules and
 [the research review](docs/RESEARCH.md) for Bitcoin Core connectivity, BitTorrent,
 other inference networks, proof systems, and Lightning tradeoffs.
-Implementation and deployment status live in [AGENTS.md](AGENTS.md).
 
 ## Local development
 

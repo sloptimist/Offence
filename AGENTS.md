@@ -54,7 +54,8 @@ source-backed network comparison is in docs/RESEARCH.md.
 - Buyer download requires Python 3.12+; live NWC funds and Windows launch remain unvalidated.
 - Buyer release buyer-v0.1.0-alpha.2 and offence.ai download are live with matching checksums.
 - GitHub Actions builds and smoke-tests AMD64/ARM64 Docker images; run 37259879618 passes with both archives uploaded.
-- Public bootstrap is reachable; supplier availability still determines usable offers.
+- README and offence.ai explain agent-first buyer access and downloads; paid-marketplace readiness is separate.
 - Node-hosted gateway/jobs remain free-only; paid split jobs and tool calls are unsupported.
-- Live mainnet purchases, fractional pricing and stronger StartOS isolation remain open.
+- Live checks: both wallets disabled; Sandy has no backend/offer; Boxed offer unavailable with discovery error.
+- Both nodes have saved Strike keys; fractional-millisatoshi billing and live payment validation remain open.
 - Live supplier deployments remain revision 9; this buyer update does not sideload them.
